@@ -13,6 +13,10 @@ The scripts will look for `.auto_gpt/.env` folder, and then in your home path: `
 scripts/run-auto-gpt
 ```
 
+When Auto-GPT runs it will:
+
+- Read/save its goals to your project's `.auto_gpt/ai_settings.yaml` file.
+- Save its work in your project's `auto_gpt_workspace` folder.
 
 
 ## Auto-GPT Developers

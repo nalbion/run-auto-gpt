@@ -9,9 +9,10 @@ services:
     env_file:
       - ${AUTO_GPT_HOME}/.env
     volumes:
+      - .auto_gpt/ai_settings.yaml:/home/appuser/ai_settings.yaml
       - ./auto_gpt_workspace:/home/appuser/auto_gpt_workspace
       - ${AUTO_GPT_HOME}/.env:/app/.env
       # - ./scripts:/workspace/scripts
       # - ./config:/workspace/config
       # - ./data:/workspace/data
-    # entrypoint: python -m autogpt
+    entrypoint: python -m autogpt --ai-settings ai_settings.yaml
