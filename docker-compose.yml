@@ -1,0 +1,17 @@
+version: '3.9'
+services:
+  auto-gpt:
+    # image: significantgravitas/auto-gpt:0.2.2
+    build:
+      context: ${AUTO_GPT_HOME}
+      # context: .auto_gpt
+      dockerfile: Dockerfile
+    env_file:
+      - ${AUTO_GPT_HOME}/.env
+    volumes:
+      - ./auto_gpt_workspace:/home/appuser/auto_gpt_workspace
+      - ${AUTO_GPT_HOME}/.env:/app/.env
+      # - ./scripts:/workspace/scripts
+      # - ./config:/workspace/config
+      # - ./data:/workspace/data
+    # entrypoint: python -m autogpt

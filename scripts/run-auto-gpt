@@ -1,0 +1,80 @@
+#!/bin/bash
+
+PROJECT_DIR="$(pwd)"
+
+# AUTO_GPT_HOME defaults to ~/.auto_gpt
+if [ -z "$AUTO_GPT_HOME" ]; then
+    echo "setting AUTO_GPT_HOME to default: ~\.auto_gpt"
+    AUTO_GPT_HOME="$HOME/.auto_gpt"
+fi
+if [ ! -d "$AUTO_GPT_HOME" ]; then
+    mkdir "$AUTO_GPT_HOME"
+fi
+
+# Set path to .env file
+if [ -f .auto_gpt/.env ]; then
+    ENV_PATH=.auto_gpt/.env
+elif [ -n "$AUTO_GPT_HOME" ] && [ -f "$AUTO_GPT_HOME/.env" ]; then
+    ENV_PATH="$AUTO_GPT_HOME/.env"
+else
+    if [ -n "$AUTO_GPT_HOME" ] && [ -f "$AUTO_GPT_HOME/.env.template" ]; then
+      cp "$AUTO_GPT_HOME/.env.template" "$AUTO_GPT_HOME/.env"
+    else
+      curl -sSL https://github.com/Significant-Gravitas/Auto-GPT/raw/stable/.env.template -o "$AUTO_GPT_HOME/.env"
+    fi
+    echo ".auto_gpt/.env" >> .gitignore
+
+    echo "Please edit the $AUTO_GPT_HOME/.env file with your desired configuration and re-run the script."
+    echo "You will need to provide OPENAI_API_KEY and EXECUTE_LOCAL_COMMANDS=True"
+    echo "echo https://platform.openai.com/account/api-keys"
+    exit 1
+fi
+
+# Check if the --update flag was passed  (must be first arg)
+if [[ "$1" == "--update" ]]; then
+  # Check if the AUTO_GPT_HOME environment variable is set
+  if [[ -n "${AUTO_GPT_HOME}" ]]; then
+    echo "Updating Auto-GPT from ${AUTO_GPT_HOME} ..."
+    pushd "$AUTO_GPT_HOME" || exit 1
+
+    git pull || exit 1
+    docker-compose build auto-gpt || exit 1
+
+    cp Dockerfile "$PROJECT_DIR/.auto_gpt"
+    cp requirements.txt "$PROJECT_DIR/.auto_gpt"
+    requirements.txt
+
+    popd || exit 1
+    echo "Auto-GPT updated!"
+
+    # Remove the --update flag from the args
+    args=$(echo "$*" | sed 's/--update//')
+    
+    # Run auto-gpt with the updated files
+    docker-compose run --rm auto-gpt $args
+  else
+    echo "Updating Auto-GPT from GitHub..."
+    curl -sSL https://github.com/Significant-Gravitas/Auto-GPT/raw/stable/Dockerfile -o .auto_gpt/Dockerfile
+    curl -sSL https://github.com/Significant-Gravitas/Auto-GPT/raw/stable/requirements.txt -o .auto_gpt/requirements.txt
+    echo "Auto-GPT updated!"
+  fi
+
+  echo "Updating devcontainer.json and Dockerfile..."
+  cp -f "$DEVCONTAINER_JSON" "$PROJECT_DIR/.auto_gpt/devcontainer.json" || exit 1
+  cp -f "$DOCKERFILE" "$PROJECT_DIR/.auto_gpt/Dockerfile" || exit 1
+
+  args=$(echo "$*" | sed 's/--update//')
+  echo "Running Auto-GPT..."
+  docker-compose run --rm auto-gpt $args
+
+#   shift
+else 
+  echo "Running Auto-GPT..."
+  docker-compose run --rm auto-gpt $*
+fi
+
+# echo "Running Auto-GPT..."
+# docker-compose run auto-gpt "$@"
+
+# ...or to see inside:
+# docker-compose run --entrypoint /bin/bash auto-gpt
